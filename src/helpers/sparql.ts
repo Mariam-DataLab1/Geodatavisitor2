@@ -194,4 +194,3 @@ export async function searchQuery(endpoint:string): Promise<SparqlResults> {
 //const [pcode, setPcode]
 //'https://api.data.pldn.nl/queries/Mariam/Query-1/run'
 //"https://api.data.pldn.nl/queries/Mariam/Query-3/run"
-
