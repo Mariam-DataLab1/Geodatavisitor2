@@ -118,10 +118,6 @@ export const genericConfig: webpack.Configuration = {
         use: [
           isDev ? "style-loader" : MiniCssExtractPlugin.loader,
           { loader: "css-loader", options: { importLoaders:1 } },
-          // {
-          //   loader: "postcss-loader",
-          //   options: { plugins: [autoprefixer()] }
-          // },
           "sass-loader"
         ]
       },
@@ -135,12 +131,6 @@ export const genericConfig: webpack.Configuration = {
         use: [
           isDev ? "style-loader" : MiniCssExtractPlugin.loader,
           { loader: "css-loader" }
-          // { loader: "css-loader", options: { importLoaders: 1 } }
-          // {
-          //   loader: "postcss-loader",
-          //   options: { plugins: () => [bgImage({ mode: "cutter" })] }
-          //   // options: { }
-          // }
         ]
       },
       {
@@ -151,9 +141,6 @@ export const genericConfig: webpack.Configuration = {
   },
   resolve: {
     modules: [path.resolve(__dirname, "./../node_modules")],
-    // alias: {
-    //       [`${fullPackageName}$`]: path.resolve(packagePath, "index.ts")
-    // },
     extensions: [".json", ".js", ".ts", ".tsx", ".scss"]
   },
   plugins: plugins

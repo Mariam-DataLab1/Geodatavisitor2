@@ -72,22 +72,18 @@ const Popup:React.FC<Props> = ({handleClose,handleClick,options}) => {
                onContextMenu={(e) => {
                    e.preventDefault();
                }}>
-      {options?.values.map(res => {
-          return (<div key={res.person} onClick={() => {
+      {/* {options?.values.map(res => {
+          return (<div key={res.sub + res.emotion + res.person + res.shopping + res.date} onClick={() => {
             handleClick(res);
           }}>
               <b>{res.person} </b>
+              <b>{res.emotion} </b>
+              <b>{res.shopping} </b>
+              <b>{res.date} </b>
 
-          </div>);
-      })}
+          </div>); */}
+      {/* })} */}
   </div>)
 }
-
-
-
-
-
-
-
 
 export default Popup

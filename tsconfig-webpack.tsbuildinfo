@@ -497,7 +497,7 @@
         "affectsGlobalScope": false
       },
       "./webpack/config.ts": {
-        "version": "0fc5827553f0b86e04d81d55c2ea322d51f019f7c5a6979b170a1adabbd94af4",
+        "version": "6a7872a537f40ae7f917ea10fa59e0444bcb2aa8b1cb6972796150acf9185b79",
         "signature": "986252357fe76d3e355d7fa57c7d000b902e17451e8c0eb7051d5b8b472965ef",
         "affectsGlobalScope": false
       },

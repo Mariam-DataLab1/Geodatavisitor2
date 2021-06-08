@@ -1,4 +1,4 @@
-import {queryResourcesDescriptions, searchResourcesDescriptions,runQuery,searchQuery} from "./sparql";
+import {queryResourcesDescriptions, searchResourcesDescriptions,runQuery,searchQuery} from "./sparql"; // queryResourcesDescriptions,
 // ,searchResourcesDescriptionsCsv,searchQueryCsv
 /**
  * 
@@ -12,14 +12,13 @@ export async function getFromCoordinates(lat : string, lng: string) {
   //console.log(await results.results.bindings.map(b => b.bag.value));
   console.log(await results);
   //It stops here
-  console.log (await queryResourcesDescriptions(lat, lng, results.results.bindings.map(b => b.person.value)));
-  return await queryResourcesDescriptions(lat, lng, results.results.bindings.map(b => b.person.value));
+  console.log (await queryResourcesDescriptions(lat, lng, results.results.bindings.map(b => b.sub.value)));
+  return await queryResourcesDescriptions(lat, lng, results.results.bindings.map(b => b.sub.value));
 }
 
 /**
  * 
- * @param postcode 
- * @param housenumber 
+ * @param Endpoint
  * @returns 
  */
 
@@ -28,11 +27,11 @@ export async function getFromTextSearch(endpoint:string) {
 // get the JSON from API
   const results = await searchQuery(endpoint);
   //console.log(await results.results.bindings.map(b => b.bag.value));
-console.log(await results);
+console.log(results);
   //It stops here
 //  console.log (await searchResourcesDescriptions(results.results.bindings.map(b => b.person.value)));
  // return JSON to array 
-  return await searchResourcesDescriptions(results);
+  return searchResourcesDescriptions(results);
 }
 
 // mariam

@@ -1,9 +1,12 @@
 //@ts-check
 import * as wellKnown from "wellknown";// Well-known text (WKT) is a text markup language for representing vector geometry objects.
 import _ from "lodash";
-// import App {useState, useEffect} from "./App";
 import { SingleObject } from "../reducer";
-// import { StatisticValue } from "semantic-ui-react";
+
+//Sparql query api
+// const coordSearchApi = 'https://api.labs.kadaster.nl/queries/jiarong-li/PandviewerTest/run'; //The coordinate search APi
+//const textSearchApi = 'https://api.labs.kadaster.nl/queries/jiarong-li/PandviewerSearch/run'; //The text search api
+
 export interface SparqlResults {
     head: Head;
     results: {
@@ -16,43 +19,14 @@ export interface Head {
 export interface Binding {
     [varname: string]: BindingValue;
 }
-/*
+
 export type BindingValue =
     | {
-    type: "uri";
-    value: string;
-}
+        type: "uri";
+        value: string;
+    }
     | {
-    type: "literal";
-    value: string;
-    "xml:lang"?: string;
-    datatype?: string;
-}
-    | { type: "bnode"; value: string };
-*/
-export type BindingValue =
-    // | {
-    //     type: "uri";
-    //     value: string;
-    // }
-    // | {
-    //     type: "typed-literal";
-    //     value: string;
-    // }
-    // | {
-    //     type: number; 
-    //     value: string
-    // }
-    // | {
-    //     type: "typed-literal"; 
-    //     value: string
-    // }
-    // | {
-    //     type: "literal"; 
-    //     value: string
-    // }
-    | {
-        type: "literal"; 
+        type: number; 
         value: string
     }
     | {
@@ -61,85 +35,90 @@ export type BindingValue =
     };
 
 /**
- * Convert the sparql json results into a Result.js array
+ * Convert the sparql json results of the coordinate query into a Result.js array
+ *  Convert the geometry format from wkt to geoJson.
  * @param results
  */
 export async function queryResourcesDescriptions(lat: string, lng: string, iris: string[]): Promise<SingleObject[]> {
     let res = await runQuery(lat, lng);
 
-    //The sparql results for 1 iri may span multiple rows. So, group them
-    const groupedByIri = _.groupBy(res.results.bindings, b => b.person.value); //s is the iri variable name
+    // The sparql results for 1 iri may span multiple rows. So, group them
+    const groupedByIri = _.groupBy(res.results.bindings, b => b.sub.value); //s is the iri variable name
     return iris
         .map(iri => {
             const bindings = groupedByIri[iri];
             if (!bindings) return undefined;
             const firstBinding = bindings[0];
             let geoJson: any;
-
+            // In this case there is only one record of the result, so it uses 'firstBinding'. In other case it should be modified.
+         //bagShape
             if (firstBinding.geo) {
-                let wktJson = bindings[0].geo.value;
+                let wktJson = bindings[0].geo.value;//bagShape
                 geoJson = wellKnown.parse(wktJson);
             }
             return {
-                person: iri,
-                geo: geoJson,
 
-                /*
-                shapeTooltip: firstBinding.shapeTooltip.value,
-                types: _.uniq(bindings.map(b => b.type.value)),
-                shape: geoJson,
-                shapeColor: bindings.filter(b => !!b.shapeColor?.value)[0]?.shapeColor?.value
-                */
+                sub: iri,//bag
+                geo: geoJson,// bagShape
+                address: firstBinding.address.value,
+                bouwjaar: firstBinding.bouwjaar.value,
+                status: firstBinding.status.value,
+                brt: firstBinding.brt.value,
+                brtName: firstBinding.brtName.value,
+                brtTypeName: firstBinding.brtTypeName.value,
+                bgt: firstBinding.bgt.value,
+                bgtStatus: firstBinding.bgtStatus.value
             };
         })
         .filter(i => !!i);
 }
-
-// export async function searchResourcesDescriptions(postcode: string, housenumber: string, iris: string[]): Promise<SingleObject[]> {
-// let res = await searchQuery(postcode, housenumber);
-
+/**
+ * Convert the sparql json results of the text search into a Result.js array
+ */
 export async function searchResourcesDescriptions( res:SparqlResults): Promise<SingleObject[]> {
-        // let res = await searchQuery();   
 
     //The sparql results for 1 iri may span multiple rows. So, group them
-                                                          
-    const groupedByIri = _.groupBy(res.results.bindings, b => b.person.value); //s is the iri variable name
-    return res.results.bindings.map(b => b.person.value)
-        .map(iri => {
-            const bindings = groupedByIri[iri];
-            if (!bindings) return undefined;
-            const firstBinding = bindings[0];
-            let geoJson: any;
-
-            //Bagshap
-            if (firstBinding.geo) {
-                let wktJson = bindings[0].geo.value;
-                geoJson = wellKnown.parse(wktJson);
+    
+    const groupedByIri = _.groupBy(res.results.bindings, b => b.sub.value); //s is the iri variable name
+    return Object.entries(groupedByIri).map(([iri, bindings]: [iri: string, bindings: Array<Binding>]) => {
+        if (!bindings) return undefined;
+            let subHost = new URL(iri).host
+            let geoJson: any = null
+            let properties: any = {}
+            for(let binding of bindings) {
+                let propName = ''
+                
+                try {
+                    if(new URL(binding.pred.value).host === subHost) {
+                        propName = binding.pred.value.split('/').slice(-1)[0]
+                    }
+                } catch (error) {}
+                
+                let value = binding.obj.value
+                if(/^POLYGON\(\(.*\)\)$/i.test(value)) {
+                    geoJson = wellKnown.parse(value)
+                } else if(propName) {
+                    properties[propName] = value
+                }
             }
             return {
-                person: iri,
+                sub: iri,
                 geo: geoJson,
-                /*
-                shapeTooltip: firstBinding.shapeTooltip.value,
-                types: _.uniq(bindings.map(b => b.type.value)),
-                shape: geoJson,
-                shapeColor: bindings.filter(b => !!b.shapeColor?.value)[0]?.shapeColor?.value
-                */
+                ...properties
+
             };
-        })
-        .filter(i => !!i);
+    }).filter(i => i);
 }
 
 /**
- * 
+ * Get the coordinate query result from the api
  * @param lat 
  * @param long 
- * @param precisie 
  */
 export async function runQuery(lat: string, long: string): Promise<SparqlResults> {
-    const sparqlApi = 'https://api.labs.kadaster.nl/queries/jiarong-li/PandviewerTest/run';
+    // const sparqlApi = 'https://api.labs.kadaster.nl/queries/jiarong-li/PandviewerTest/run';
     let sufUrl = '?lat=' + lat + '&long=' + long;
-    let runApi = sparqlApi + sufUrl;
+    let runApi = sufUrl; // + sparqlApi 
     const result = await fetch(runApi, {
         method: "GET",
         headers: {
@@ -155,29 +134,14 @@ export async function runQuery(lat: string, long: string): Promise<SparqlResults
     return JSON.parse(await result.text());
 
 }
-// export async function searchQuery(postcode: string, housenumber: string): Promise<SparqlResults> {
-//     const searchApi = 'https://api.labs.kadaster.nl/queries/jiarong-li/PandviewerSearch/run';
-//     let sufUrl = '?postcode=' + postcode + '&huisnummer=' + housenumber;
-//     let runApi = searchApi + sufUrl;
-//     const result = await fetch(runApi, {
-//         method: "GET",
-//         headers: {
-//             "Content-Type": "application/json",
-//             Accept: "application/sparql-results+json"
-//         },
-//     });
-//     if (result.status > 300) {
-//         throw new Error("Request with response " + result.status);
-//     }
-//     return JSON.parse(await result.text());
-// }
-// mariam
 
+/**
+ * Get the text search result from the api
+ * @param endpoint 
+ * @returns 
+ */
 
 export async function searchQuery(endpoint:string): Promise<SparqlResults> {
-    // const searchApi = 'https://api.data.pldn.nl/queries/Mariam/Query-1/run';
-    // let sufUrl = '?geo=' + geo; + '&person=' + person; // this appending sth and condition to URL
-    // let runApi = searchApi;
     const result = await fetch(endpoint, {
         method: "GET",
         headers: {
@@ -189,8 +153,18 @@ export async function searchQuery(endpoint:string): Promise<SparqlResults> {
         throw new Error("Request with response " + result.status);
     }
 
-    return JSON.parse(await result.text());
+    return result.json();
 }
-//const [pcode, setPcode]
-//'https://api.data.pldn.nl/queries/Mariam/Query-1/run'
-//"https://api.data.pldn.nl/queries/Mariam/Query-3/run"
+
+
+//polygon
+// https://api.data.pldn.nl/queries/Mariam/Query-15/run
+// https://api.data.pldn.nl/queries/Mariam/Query-16/run   it works with address
+// https://api.data.pldn.nl/queries/Mariam/Query-17/run  it is pilot emotion and costs
+
+// Zero query 
+// https://api.data.pldn.nl/queries/Mariam/Query-29/run
+// https://api.data.pldn.nl/queries/Mariam/Query-30/run
+// https://api.data.pldn.nl/queries/Mariam/Query-32/run
+
+// npm run dev
